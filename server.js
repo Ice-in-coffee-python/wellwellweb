@@ -8,16 +8,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Serve sites
 app.use('/website1', express.static(path.join(__dirname, 'website1')));
 app.use('/website2', express.static(path.join(__dirname, 'website2')));
 
-// Root test
-app.get('/', (req, res) => {
-  res.send('Server alive');
-});
-
-// Location lookup
 async function getLocation(ip) {
   try {
     const response = await axios.get(`http://ipapi.co/${ip}/json/`);
@@ -27,7 +20,6 @@ async function getLocation(ip) {
   }
 }
 
-// WebSocket
 io.on('connection', async (socket) => {
   let clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
   clientIP = clientIP.split(',')[0];
@@ -37,4 +29,4 @@ io.on('connection', async (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Running on ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
