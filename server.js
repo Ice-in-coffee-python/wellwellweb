@@ -1,43 +1,37 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const axios = require('axios'); // For geolocation API
+const axios = require('axios');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Serve static files for Website 1
-app.use('/website1', express.static('website1'));
+// ✅ Serve Website folders properly
+app.use('/website1', express.static(path.join(__dirname, 'website1')));
+app.use('/website2', express.static(path.join(__dirname, 'website2')));
 
-// Serve static files for Website 2
-app.use('/website2', express.static('website2'));
-
-// Function to get location from IP
+// 🌍 Get location from IP
 async function getLocation(ip) {
   try {
     const response = await axios.get(`http://ipapi.co/${ip}/json/`);
-    return `${response.data.city}, ${response.data.country_name}`; // e.g., "New York, United States"
+    return `${response.data.city}, ${response.data.country_name}`;
   } catch (error) {
     console.error('Geolocation error:', error.message);
-    return 'Location unavailable'; // Fallback if API fails
+    return 'Location unavailable';
   }
 }
 
-// Handle WebSocket connections
+// 🔌 WebSocket connection
 io.on('connection', async (socket) => {
   console.log('A user connected');
 
-  // Get the client's IP address
-  let clientIP = socket.handshake.address;
-  if (socket.handshake.headers['x-forwarded-for']) {
-    clientIP = socket.handshake.headers['x-forwarded-for'].split(',')[0]; // Handle proxies
-  }
+  let clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+  clientIP = clientIP.split(',')[0];
 
-  // Get approximate location
   const location = await getLocation(clientIP);
 
-  // Send IP and location to Website 2
   const dataToSend = `IP: ${clientIP}, Location: ${location}`;
   io.emit('receiveFromWebsite1', dataToSend);
 
@@ -46,7 +40,8 @@ io.on('connection', async (socket) => {
   });
 });
 
-// Start the server on port 3000
-server.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+// 🚀 IMPORTANT FOR RAILWAY
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
